@@ -10,9 +10,27 @@
     <div class="container">
         <h1>🔢 Calculadora de Matrices</h1>
 
+        <div class="header-inputs">
+            <h3>📝 Datos del Ejercicio</h3>
+            <label>Materia: <input type="text" id="header-materia" placeholder="Álgebra Lineal"></label>
+            <label>Realizado por: <input type="text" id="header-nombre" placeholder="Tu Nombre"></label>
+            <label>Carrera: <input type="text" id="header-carrera" placeholder="Ingeniería"></label>
+            <label>Sede: <input type="text" id="header-sede" placeholder="Sede Central"></label>
+            <label>Jornada: <input type="text" id="header-jornada" placeholder="Diurna"></label>
+            <label>Fecha: <input type="date" id="header-fecha" value="2025-11-23"></label>
+        </div>
+
+        <hr>
+
         <div class="input-section">
+            
             <div class="matrix-setup">
                 <h2>Matriz A</h2>
+                <button onclick="showPasteArea('A')" class="paste-button">📋 Pegar Matriz A</button>
+                <div id="pasteA-area" class="paste-area">
+                    <textarea id="pasteA-text" rows="3" placeholder="Ejemplo: 1,2,3&#10;4,5,6"></textarea>
+                    <button onclick="importMatrixFromText('A')" style="background-color: #27ae60;">Importar</button>
+                </div>
                 <label for="rowsA">Filas:</label>
                 <input type="number" id="rowsA" value="2" min="1">
                 <label for="colsA">Columnas:</label>
@@ -23,6 +41,11 @@
             
             <div class="matrix-setup">
                 <h2>Matriz B</h2>
+                <button onclick="showPasteArea('B')" class="paste-button">📋 Pegar Matriz B</button>
+                <div id="pasteB-area" class="paste-area">
+                    <textarea id="pasteB-text" rows="3" placeholder="Ejemplo: 1,2&#10;3,4"></textarea>
+                    <button onclick="importMatrixFromText('B')" style="background-color: #27ae60;">Importar</button>
+                </div>
                 <label for="rowsB">Filas:</label>
                 <input type="number" id="rowsB" value="2" min="1">
                 <label for="colsB">Columnas:</label>
@@ -39,24 +62,26 @@
                 <option value="subtract">Resta (-)</option>
                 <option value="multiply">Multiplicación (x)</option>
             </select>
-            <button onclick="calculate()">Calcular</button>
+            <button onclick="addExerciseToReport()">Añadir a Reporte</button>
         </div>
 
         <p id="error-message" class="error"></p>
 
-        <div class="operation-display-section">
-            <h2>Paso a Paso (Operaciones)</h2>
-            <div id="operation-display-container" class="matrix-table-container step-by-step"></div>
+        <hr>
+
+        <div id="report-container">
+            <h2>📊 Reporte de Ejercicios</h2>
+            <div id="exercises-list">
+                <p class="placeholder">Añade ejercicios para generar el reporte.</p>
+            </div>
         </div>
 
-        <div class="result-section">
-            <h2>Resultado Final (Matriz R)</h2>
-            <div id="result-container" class="matrix-table-container"></div>
-        </div>
+        <button onclick="printReport()" class="print-button">🖨️ Imprimir Reporte (Incluye Encabezado)</button>
+        <button onclick="clearReport()" class="clear-button">🗑️ Limpiar Reporte Completo</button>
 
-        <button onclick="printResult()" class="print-button">🖨️ Imprimir Resultado</button>
-        <p class="print-tip">Para imprimir o guardar como PDF (para abrir en Word), presiona el botón de imprimir y selecciona "Guardar como PDF" en las opciones de destino.</p>
     </div>
+
+    <div id="print-area" style="display: none;"></div>
 
     <script src="script.js"></script>
 </body>
