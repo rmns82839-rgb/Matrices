@@ -16,11 +16,35 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 950px;
+    /* Permitir desplazamiento si el contenido general se vuelve muy ancho */
+    overflow-x: auto; 
 }
 
-h1, h2 {
+h1, h2, h3 {
     text-align: center;
     color: #2c3e50;
+}
+
+/* --- Estilos de Encabezado de Reporte --- */
+.header-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.header-inputs label {
+    flex: 1 1 30%;
+    min-width: 150px;
+}
+
+.header-inputs input {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
 }
 
 .input-section {
@@ -39,6 +63,24 @@ h1, h2 {
     min-width: 200px;
 }
 
+/* --- Estilos de Pegar Matriz --- */
+.paste-area {
+    display: none; /* Oculto por defecto */
+    margin-top: 10px;
+    padding: 5px;
+    border: 1px dashed #3498db;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.paste-area textarea {
+    width: 90%;
+    margin: 5px 0;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+
 /* --- Estilos de Control --- */
 input[type="number"], select {
     padding: 6px;
@@ -56,6 +98,12 @@ button {
     transition: background-color 0.3s;
     margin-top: 5px;
 }
+.clear-button {
+    background-color: #e74c3c;
+    width: 100%;
+    margin-top: 10px;
+}
+
 
 /* --- Estilos de Matriz (Tablas) --- */
 .matrix-table-container {
@@ -63,7 +111,6 @@ button {
     padding: 5px;
     display: flex; 
     justify-content: center;
-    overflow-x: auto;
 }
 
 .matrix-table {
@@ -88,7 +135,7 @@ button {
     border: none;
     text-align: center;
     font-size: 14px;
-    background-color: transparent !important; /* CLAVE */
+    background-color: transparent !important; 
 }
 
 /* Celdas de Resultado Final */
@@ -100,13 +147,24 @@ button {
 
 /* Celdas de Paso a Paso */
 .matrix-table.step-table td {
+    /* AJUSTE FINAL: Tamaño más pequeño y equilibrado */
     min-width: 150px; 
     font-size: 0.8em;
     padding: 5px 10px;
     white-space: normal;
 }
 
-/* --- Colores Dinámicos (10 Clases de Color) --- */
+/* --- ESTILO ESPECÍFICO PARA EL SCROLL EN EL REPORTE --- */
+.exercise-report .matrix-table-container {
+    width: 100%; 
+    overflow-x: auto; /* Habilita el desplazamiento horizontal */
+    justify-content: flex-start; 
+    margin-left: 0;
+    margin-right: 0;
+}
+
+
+/* --- Colores Dinámicos (10 Clases) --- */
 .bg-color-0 { background-color: #e6f7ff; } /* Azul claro */
 .bg-color-1 { background-color: #e8f9e6; } /* Verde claro */
 .bg-color-2 { background-color: #fff3e6; } /* Naranja claro */
@@ -119,38 +177,65 @@ button {
 .bg-color-9 { background-color: #e6ffe6; } /* Verde pastel */
 
 
-/* --- Sombreado Interactivo para Multiplicación --- */
-.highlight-A {
-    background-color: #3498db !important; /* Azul más fuerte para Matriz A */
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
+/* --- Estilos específicos para cada ejercicio en el reporte --- */
+.exercise-report {
+    border: 1px dashed #ccc;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    page-break-inside: avoid;
 }
 
-.highlight-B {
-    background-color: #2ecc71 !important; /* Verde más fuerte para Matriz B */
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-/* --- Responsividad Adicional --- */
-@media (max-width: 600px) {
-    .input-section {
-        flex-direction: column;
+/* ------------------------------------------------ */
+/* --- SECCIÓN DE IMPRESIÓN (@media print) --- */
+/* ------------------------------------------------ */
+@media print {
+    /* Ocultar elementos de la interfaz de usuario */
+    .container, .print-button, .clear-button, .header-inputs, hr, .input-section, .operations, #report-container h2,
+    .exercise-report button, .paste-button, .paste-area { 
+        display: none !important;
     }
-    .matrix-setup {
+    
+    /* Mostrar solo el área de impresión (El Encabezado y los ejercicios) */
+    #print-area {
+        display: block !important;
         width: 100%;
-        margin-bottom: 10px;
+        margin: 0;
+        padding: 0;
+        font-size: 12pt;
     }
-    .matrix-table-container {
-        justify-content: flex-start;
+
+    /* Regla CLAVE: Forzar la impresión de colores de fondo */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+    
+    .report-header {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #000;
+        color: #000;
+    }
+
+    .exercise-report {
+        border: 1px solid #ddd;
+    }
+    
+    /* Asegurar que las tablas se vean bien */
+    .matrix-table {
+        border-color: #000;
+        margin: 5px auto;
     }
     .matrix-table td {
-        min-width: 30px;
+        border-color: #777;
     }
-    .matrix-table.step-table td {
-        min-width: 120px;
-        font-size: 0.75em;
+    .matrix-table input {
+        background-color: transparent !important; 
+    }
+    
+    /* Desactivar scroll en impresión */
+    .exercise-report .matrix-table-container {
+        overflow-x: visible; 
     }
 }
