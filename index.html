@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Matrices</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔢 Calculadora de Matrices</h1>
+
+        <div class="input-section">
+            <div class="matrix-setup">
+                <h2>Matriz A</h2>
+                <label for="rowsA">Filas:</label>
+                <input type="number" id="rowsA" value="2" min="1">
+                <label for="colsA">Columnas:</label>
+                <input type="number" id="colsA" value="2" min="1">
+                <button onclick="generateMatrixInput('A')">Generar A</button>
+            </div>
+            <div id="matrixA-container" class="matrix-table-container"></div>
+            
+            <div class="matrix-setup">
+                <h2>Matriz B</h2>
+                <label for="rowsB">Filas:</label>
+                <input type="number" id="rowsB" value="2" min="1">
+                <label for="colsB">Columnas:</label>
+                <input type="number" id="colsB" value="2" min="1">
+                <button onclick="generateMatrixInput('B')">Generar B</button>
+            </div>
+            <div id="matrixB-container" class="matrix-table-container"></div>
+        </div>
+
+        <div class="operations">
+            <label for="operation">Seleccionar Operación:</label>
+            <select id="operation">
+                <option value="add">Suma (+)</option>
+                <option value="subtract">Resta (-)</option>
+                <option value="multiply">Multiplicación (x)</option>
+            </select>
+            <button onclick="calculate()">Calcular</button>
+        </div>
+
+        <p id="error-message" class="error"></p>
+
+        <div class="operation-display-section">
+            <h2>Paso a Paso (Operaciones)</h2>
+            <div id="operation-display-container" class="matrix-table-container step-by-step"></div>
+        </div>
+
+        <div class="result-section">
+            <h2>Resultado Final (Matriz R)</h2>
+            <div id="result-container" class="matrix-table-container"></div>
+        </div>
+
+        <button onclick="printResult()" class="print-button">🖨️ Imprimir Resultado</button>
+        <p class="print-tip">Para imprimir o guardar como PDF (para abrir en Word), presiona el botón de imprimir y selecciona "Guardar como PDF" en las opciones de destino.</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

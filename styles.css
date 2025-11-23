@@ -1,0 +1,156 @@
+/* --- Base Styles y Responsividad --- */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 10px; 
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    background-color: #fff;
+    padding: 20px; 
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 950px;
+}
+
+h1, h2 {
+    text-align: center;
+    color: #2c3e50;
+}
+
+.input-section {
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.matrix-setup {
+    background-color: #ecf0f1;
+    padding: 10px;
+    border-radius: 5px;
+    flex-grow: 1;
+    min-width: 200px;
+}
+
+/* --- Estilos de Control --- */
+input[type="number"], select {
+    padding: 6px;
+    margin-right: 5px;
+    width: 50px;
+}
+
+button {
+    background-color: #3498db;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 5px;
+}
+
+/* --- Estilos de Matriz (Tablas) --- */
+.matrix-table-container {
+    margin-top: 10px;
+    padding: 5px;
+    display: flex; 
+    justify-content: center;
+    overflow-x: auto;
+}
+
+.matrix-table {
+    border-collapse: collapse;
+    border: 2px solid #2c3e50;
+}
+
+.matrix-table input, .matrix-table td {
+    border: 1px solid #bdc3c7;
+    padding: 0;
+    text-align: center;
+    height: 35px;
+    min-width: 35px;
+    transition: background-color 0.3s;
+}
+
+/* FIX CLAVE: Hacemos el input transparente para que se vea el color del TD */
+.matrix-table input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 14px;
+    background-color: transparent !important; /* CLAVE */
+}
+
+/* Celdas de Resultado Final */
+.matrix-table.result-table td {
+    font-weight: bold;
+    font-size: 0.9em;
+    min-width: 50px;
+}
+
+/* Celdas de Paso a Paso */
+.matrix-table.step-table td {
+    min-width: 150px; 
+    font-size: 0.8em;
+    padding: 5px 10px;
+    white-space: normal;
+}
+
+/* --- Colores Dinámicos (10 Clases de Color) --- */
+.bg-color-0 { background-color: #e6f7ff; } /* Azul claro */
+.bg-color-1 { background-color: #e8f9e6; } /* Verde claro */
+.bg-color-2 { background-color: #fff3e6; } /* Naranja claro */
+.bg-color-3 { background-color: #f7e6f9; } /* Violeta claro */
+.bg-color-4 { background-color: #ffe6e6; } /* Rojo claro */
+.bg-color-5 { background-color: #e6f9f7; } /* Cian claro */
+.bg-color-6 { background-color: #f7ffe6; } /* Lima claro */
+.bg-color-7 { background-color: #eee6ff; } /* Morado claro */
+.bg-color-8 { background-color: #fffbeb; } /* Dorado claro */
+.bg-color-9 { background-color: #e6ffe6; } /* Verde pastel */
+
+
+/* --- Sombreado Interactivo para Multiplicación --- */
+.highlight-A {
+    background-color: #3498db !important; /* Azul más fuerte para Matriz A */
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.highlight-B {
+    background-color: #2ecc71 !important; /* Verde más fuerte para Matriz B */
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* --- Responsividad Adicional --- */
+@media (max-width: 600px) {
+    .input-section {
+        flex-direction: column;
+    }
+    .matrix-setup {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .matrix-table-container {
+        justify-content: flex-start;
+    }
+    .matrix-table td {
+        min-width: 30px;
+    }
+    .matrix-table.step-table td {
+        min-width: 120px;
+        font-size: 0.75em;
+    }
+}
