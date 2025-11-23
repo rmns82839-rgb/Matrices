@@ -1,18 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
     generateMatrixInput('A');
     generateMatrixInput('B');
+    // Establecer la fecha actual por defecto
+    document.getElementById('header-fecha').value = new Date().toISOString().substring(0, 10);
 });
 
 // Número máximo de colores definidos en CSS (bg-color-0 a bg-color-9)
 const COLOR_LIMIT = 10; 
+let exerciseCount = 0; // Contador de ejercicios
 
-// Función para obtener el color basado en la posición (i, j)
+// --- FUNCIONES DE UTILIDAD Y GENERACIÓN DE HTML ---
+
 function getColorClass(i, j, cols) {
     // Calcula un índice único (i * cols + j) y usa módulo para reciclar los 10 colores.
     const index = (i * cols + j) % COLOR_LIMIT; 
     return `bg-color-${index}`;
 }
-
 
 /**
  * Genera la estructura de campos de entrada (inputs) para una matriz (A o B) usando <table>.
@@ -52,10 +55,11 @@ function generateMatrixInput(matrixId) {
  */
 function getMatrixValues(matrixId) {
     const table = document.getElementById(`matrix-table-${matrixId}`);
-    if (!table) return [];
+    // Asegurarse de que la tabla existe y tiene filas, sino retorna array vacío
+    if (!table || table.rows.length === 0) return []; 
 
     const rows = table.rows.length;
-    const cols = table.rows.length > 0 ? table.rows[0].cells.length : 0;
+    const cols = table.rows[0].cells.length; // Si tiene filas, debe tener celdas
     const matrix = [];
 
     for (let i = 0; i < rows; i++) {
@@ -75,238 +79,84 @@ function getMatrixValues(matrixId) {
 }
 
 /**
- * Muestra el resultado final en formato de tabla, aplicando el color.
+ * Construye la tabla de matriz de entrada (A o B) con colores para la impresión.
  */
-function displayResult(matrix, cols) {
-    const container = document.getElementById('result-container');
-    container.innerHTML = ''; 
+function createInputTableHTML(matrix, id, colsR, operation) {
+    const rows = matrix.length;
+    // Manejar matriz vacía
+    if (rows === 0 || matrix[0] === undefined) return '';
 
-    if (!matrix || matrix.length === 0) return; 
-
-    const table = document.createElement('table');
-    table.className = 'matrix-table result-table';
-
-    for (let i = 0; i < matrix.length; i++) {
-        const row = table.insertRow();
-        for (let j = 0; j < matrix[0].length; j++) {
-            const cell = row.insertCell();
-            // Aplicar color
-            cell.classList.add(getColorClass(i, j, cols));
-            
-            cell.textContent = matrix[i][j].toFixed(4).replace(/\.?0+$/, ''); 
-        }
-    }
-    container.appendChild(table);
-}
-
-/**
- * Muestra la operación y el resultado de esa celda en formato de tabla, aplicando el color.
- */
-function displayOperationSteps(steps, results, operation) {
-    const container = document.getElementById('operation-display-container');
-    container.innerHTML = '';
-
-    if (!steps || steps.length === 0) return;
-
-    const rows = steps.length;
-    const cols = steps[0].length;
-
-    const table = document.createElement('table');
-    table.className = 'matrix-table step-table';
-    
-    const isMultiplication = operation === 'multiply';
-    if (isMultiplication) {
-        addMultiplicationHoverListeners(table, rows, cols);
-    }
+    const cols = matrix[0].length;
+    let html = `<table class="matrix-table ${id}">`;
 
     for (let i = 0; i < rows; i++) {
-        const row = table.insertRow();
+        html += '<tr>';
         for (let j = 0; j < cols; j++) {
-            const cell = row.insertCell();
+            let colorClass = '';
             
-            // Aplicar color
-            cell.classList.add(getColorClass(i, j, cols));
+            if (operation === 'add' || operation === 'subtract' || operation === 'multiply') {
+                colorClass = getColorClass(i, j, colsR);
+            }
 
-            // Construir la cadena: Operación = Resultado
+            const inputValue = matrix[i][j].toFixed(2).replace(/\.?0+$/, '');
+            html += `<td class="${colorClass.trim()}">${inputValue}</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</table>';
+    return html;
+}
+
+/**
+ * Construye la tabla de Paso a Paso.
+ */
+function createStepTableHTML(steps, results, colsR) {
+    const rows = steps.length;
+    // Manejar matriz vacía
+    if (rows === 0 || steps[0] === undefined) return '';
+
+    let html = '<div class="matrix-table-container"><table class="matrix-table step-table">';
+    for (let i = 0; i < rows; i++) {
+        html += '<tr>';
+        for (let j = 0; j < steps[0].length; j++) {
+            const colorClass = getColorClass(i, j, colsR);
             const resultValue = results[i][j].toFixed(4).replace(/\.?0+$/, '');
-            cell.innerHTML = `${steps[i][j]} = <b>${resultValue}</b>`;
-
-            if (isMultiplication) {
-                cell.setAttribute('data-row', i);
-                cell.setAttribute('data-col', j);
-            }
+            html += `<td class="${colorClass}">${steps[i][j]} = <b>${resultValue}</b></td>`;
         }
+        html += '</tr>';
     }
-    container.appendChild(table);
+    html += '</table></div>';
+    return html;
 }
 
 /**
- * Agrega los listeners de mouseover/mouseout para el sombreado de multiplicación. (Lógica sin cambios)
+ * Construye la tabla de Resultados Finales.
  */
-function addMultiplicationHoverListeners(stepTable, rows, cols) {
-    const matrixATable = document.getElementById('matrix-table-A');
-    const matrixBTable = document.getElementById('matrix-table-B');
-
-    stepTable.querySelectorAll('td').forEach(cell => {
-        cell.addEventListener('mouseover', () => {
-            const rowIdx = parseInt(cell.getAttribute('data-row'));
-            const colIdx = parseInt(cell.getAttribute('data-col'));
-
-            if (isNaN(rowIdx) || isNaN(colIdx)) return;
-
-            // Sombreado de la FILA en la Matriz A (Color A)
-            if (matrixATable && matrixATable.rows[rowIdx]) {
-                Array.from(matrixATable.rows[rowIdx].cells).forEach(c => c.classList.add('highlight-A'));
-            }
-
-            // Sombreado de la COLUMNA en la Matriz B (Color B)
-            if (matrixBTable) {
-                for (let i = 0; i < matrixBTable.rows.length; i++) {
-                    if (matrixBTable.rows[i].cells[colIdx]) {
-                        matrixBTable.rows[i].cells[colIdx].classList.add('highlight-B');
-                    }
-                }
-            }
-        });
-
-        cell.addEventListener('mouseout', () => {
-            // Limpiar sombreado en Matriz A
-            if (matrixATable) {
-                matrixATable.querySelectorAll('td').forEach(c => c.classList.remove('highlight-A'));
-            }
-
-            // Limpiar sombreado en Matriz B
-            if (matrixBTable) {
-                matrixBTable.querySelectorAll('td').forEach(c => c.classList.remove('highlight-B'));
-            }
-        });
-    });
-}
-
-/**
- * Ejecuta el cálculo y prepara los datos para la visualización.
- */
-function calculate() {
-    const A = getMatrixValues('A');
-    const B = getMatrixValues('B');
-    const operation = document.getElementById('operation').value;
-    const errorDisplay = document.getElementById('error-message');
+function createResultTableHTML(matrix, colsR) {
+    const rows = matrix.length;
+    // Manejar matriz vacía
+    if (rows === 0 || matrix[0] === undefined) return '';
     
-    let resultMatrix = null;
-    let stepByStep = null;
-
-    errorDisplay.textContent = ''; 
-    document.getElementById('result-container').innerHTML = ''; 
-    document.getElementById('operation-display-container').innerHTML = ''; 
-
-    // Limpiar clases de sombreado
-    document.getElementById('matrix-table-A')?.querySelectorAll('td').forEach(c => c.className = '');
-    document.getElementById('matrix-table-B')?.querySelectorAll('td').forEach(c => c.className = '');
-
-
-    const rowsA = A.length;
-    const colsA = A[0].length;
-    const rowsB = B.length;
-    const colsB = B[0].length;
-    const symbol = operation === 'add' ? '+' : (operation === 'subtract' ? '-' : 'x');
-
-
-    try {
-        switch (operation) {
-            case 'add':
-            case 'subtract':
-                if (rowsA !== rowsB || colsA !== colsB) {
-                    throw new Error('La Suma y Resta requieren que ambas matrices tengan las mismas dimensiones.');
-                }
-                
-                [resultMatrix, stepByStep] = calculateElementWise(A, B, symbol);
-                break;
-
-            case 'multiply':
-                if (colsA !== rowsB) {
-                    throw new Error('La Multiplicación requiere que el número de Columnas de A sea igual al número de Filas de B.');
-                }
-
-                [resultMatrix, stepByStep] = calculateMultiplication(A, B);
-                break;
+    let html = '<div class="matrix-table-container"><table class="matrix-table result-table">';
+    for (let i = 0; i < rows; i++) {
+        html += '<tr>';
+        for (let j = 0; j < matrix[0].length; j++) {
+            const colorClass = getColorClass(i, j, colsR);
+            html += `<td class="${colorClass}">${matrix[i][j].toFixed(4).replace(/\.?0+$/, '')}</td>`;
         }
-    } catch (error) {
-        errorDisplay.textContent = `Error de cálculo: ${error.message}`;
-        resultMatrix = null;
-        stepByStep = null;
+        html += '</tr>';
     }
-    
-    if (resultMatrix) {
-        const colsR = resultMatrix[0].length; 
-
-        // 1. Colorear las matrices de entrada A y B
-        colorInputMatrices(resultMatrix.length, colsR, operation);
-        
-        // 2. Mostrar operaciones y resultado
-        displayOperationSteps(stepByStep, resultMatrix, operation);
-        displayResult(resultMatrix, colsR);
-    }
+    html += '</table></div>';
+    return html;
 }
 
-/**
- * Colorea las celdas de las matrices A y B con el color que corresponde a la operación que generan.
- */
-function colorInputMatrices(rowsR, colsR, operation) {
-    const tableA = document.getElementById('matrix-table-A');
-    const tableB = document.getElementById('matrix-table-B');
-    if (!tableA || !tableB) return;
-    
-    if (operation === 'add' || operation === 'subtract') {
-        // Lógica para Suma/Resta: El par A[i][j] y B[i][j] tienen el mismo color que R[i][j].
-        for (let i = 0; i < rowsR; i++) {
-            for (let j = 0; j < colsR; j++) {
-                const colorClass = getColorClass(i, j, colsR);
-                
-                // Colorear A[i][j]
-                if (tableA.rows[i] && tableA.rows[i].cells[j]) {
-                    tableA.rows[i].cells[j].classList.add(colorClass);
-                }
-                // Colorear B[i][j]
-                if (tableB.rows[i] && tableB.rows[i].cells[j]) {
-                    tableB.rows[i].cells[j].classList.add(colorClass);
-                }
-            }
-        }
-    } else if (operation === 'multiply') {
-        // Lógica para Multiplicación: Todos los elementos usados para R[i][j] tienen el color de R[i][j].
-        const rowsA = tableA.rows.length;
-        const colsB = tableB.rows[0].cells.length;
-        const commonDim = tableA.rows[0].cells.length; // Filas de B
+// --- FUNCIONES DE CÁLCULO ---
 
-        for (let i = 0; i < rowsA; i++) {
-            for (let j = 0; j < colsB; j++) {
-                const colorClass = getColorClass(i, j, colsR);
-
-                for (let k = 0; k < commonDim; k++) {
-                    // A[i][k] (Fila i, Columna k)
-                    if (tableA.rows[i] && tableA.rows[i].cells[k]) {
-                        tableA.rows[i].cells[k].classList.add(colorClass);
-                    }
-                    // B[k][j] (Fila k, Columna j)
-                    if (tableB.rows[k] && tableB.rows[k].cells[j]) {
-                        tableB.rows[k].cells[j].classList.add(colorClass);
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-/**
- * Realiza la suma o resta y genera los pasos. (Lógica sin cambios)
- */
 function calculateElementWise(A, B, symbol) {
     const rows = A.length;
     const cols = A[0].length;
     const C = []; 
     const S = []; 
-
     for (let i = 0; i < rows; i++) {
         C[i] = [];
         S[i] = [];
@@ -314,34 +164,28 @@ function calculateElementWise(A, B, symbol) {
             const valA = A[i][j];
             const valB = B[i][j];
             C[i][j] = (symbol === '+') ? (valA + valB) : (valA - valB);
-
             S[i][j] = `${valA} ${symbol} ${valB}`;
         }
     }
     return [C, S];
 }
 
-
-/**
- * Realiza la multiplicación de dos matrices (A * B) y genera los pasos. (Lógica sin cambios)
- */
 function calculateMultiplication(A, B) {
     const rowsA = A.length;
     const colsA = A[0].length; 
     const colsB = B[0].length;
     const C = []; 
     const S = []; 
-
     for (let i = 0; i < rowsA; i++) {
         C[i] = [];
         S[i] = [];
         for (let j = 0; j < colsB; j++) {
             let sum = 0;
-            let stepString = "";
-
+            let stepString = ""; 
+            
             for (let k = 0; k < colsA; k++) {
                 sum += A[i][k] * B[k][j];
-
+                
                 stepString += `(${A[i][k].toFixed(2).replace(/\.?0+$/, '')} x ${B[k][j].toFixed(2).replace(/\.?0+$/, '')})`;
                 if (k < colsA - 1) {
                     stepString += " + ";
@@ -355,9 +199,264 @@ function calculateMultiplication(A, B) {
 }
 
 
+// --- LÓGICA DE REPORTE Y ELIMINACIÓN ---
+
 /**
- * Abre la ventana de impresión del navegador.
+ * Ejecuta el cálculo y añade el ejercicio completo al reporte.
  */
-function printResult() {
+function addExerciseToReport() {
+    const A = getMatrixValues('A');
+    const B = getMatrixValues('B');
+    const operation = document.getElementById('operation').value;
+    const errorDisplay = document.getElementById('error-message');
+    
+    errorDisplay.textContent = ''; 
+
+    // Verificación robusta para evitar el error 'Cannot read properties of undefined'
+    if (A.length === 0 || A[0] === undefined || B.length === 0 || B[0] === undefined) {
+        errorDisplay.textContent = 'Error: Por favor, genera las matrices A y B e introduce valores.';
+        return;
+    }
+
+    const rowsA = A.length;
+    const colsA = A[0].length;
+    const rowsB = B.length;
+    const colsB = B[0].length;
+
+    const opSymbol = operation === 'add' ? '+' : (operation === 'subtract' ? '-' : 'x');
+    const opName = operation === 'add' ? 'Suma' : (operation === 'subtract' ? 'Resta' : 'Multiplicación');
+
+    let resultMatrix = null;
+    let stepByStep = null;
+
+    try {
+        switch (operation) {
+            case 'add':
+            case 'subtract':
+                if (rowsA !== rowsB || colsA !== colsB) {
+                    throw new Error(`La ${opName} requiere que ambas matrices tengan las mismas dimensiones (${rowsA}x${colsA} vs ${rowsB}x${colsB}).`);
+                }
+                [resultMatrix, stepByStep] = calculateElementWise(A, B, opSymbol);
+                break;
+            case 'multiply':
+                if (colsA !== rowsB) {
+                    throw new Error(`La Multiplicación requiere que el número de Columnas de A sea igual al número de Filas de B (${colsA} vs ${rowsB}).`);
+                }
+                [resultMatrix, stepByStep] = calculateMultiplication(A, B);
+                break;
+        }
+    } catch (error) {
+        errorDisplay.textContent = `Error: ${error.message}`;
+        return;
+    }
+    
+    // Generar el HTML del ejercicio completo para el reporte
+    exerciseCount++;
+    const currentId = exerciseCount;
+    const colsR = resultMatrix[0].length;
+
+    const aHTML = createInputTableHTML(A, 'A', colsR, operation);
+    const bHTML = createInputTableHTML(B, 'B', colsR, operation);
+    
+    const reportHTML = `
+        <div class="exercise-report" id="exercise-${currentId}">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; margin-bottom: 10px;">
+                <h3 style="margin: 0;">Ejercicio ${currentId}: ${opName} (${rowsA}x${colsA} ${opSymbol} ${rowsB}x${colsB})</h3>
+                <button onclick="removeExercise(${currentId})" style="background-color: #e74c3c; padding: 5px 10px; font-size: 0.8em;">🗑️ Eliminar</button>
+            </div>
+            
+            <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px;">
+                <div style="flex: 1; min-width: 250px;">
+                    <h4>Matriz A</h4>
+                    ${aHTML}
+                </div>
+                <div style="flex: 1; min-width: 250px;">
+                    <h4>Matriz B</h4>
+                    ${bHTML}
+                </div>
+            </div>
+
+            <h4>Paso a Paso (Operaciones)</h4>
+            ${createStepTableHTML(stepByStep, resultMatrix, colsR)}
+
+            <h4>Resultado Final (Matriz R)</h4>
+            ${createResultTableHTML(resultMatrix, colsR)}
+        </div>
+    `;
+
+    document.getElementById('exercises-list').insertAdjacentHTML('beforeend', reportHTML);
+    document.querySelector('.placeholder')?.remove();
+}
+
+/**
+ * Remueve un ejercicio específico del reporte usando su ID y renumeera los restantes.
+ * @param {number} id - El número único del ejercicio a remover.
+ */
+window.removeExercise = function(id) {
+    const exerciseElement = document.getElementById(`exercise-${id}`);
+    if (exerciseElement) {
+        exerciseElement.remove();
+        
+        const exercisesList = document.getElementById('exercises-list');
+        
+        if (!exercisesList.hasChildNodes()) {
+            exercisesList.innerHTML = '<p class="placeholder">Añade ejercicios para generar el reporte.</p>';
+            exerciseCount = 0;
+        } else {
+            let currentCount = 0;
+            exercisesList.querySelectorAll('.exercise-report').forEach(element => {
+                currentCount++;
+                element.id = `exercise-${currentCount}`;
+                
+                const headerH3 = element.querySelector('h3');
+                const titleParts = headerH3.textContent.split(': ');
+                if(titleParts.length > 1) {
+                    headerH3.innerHTML = `Ejercicio ${currentCount}: ${titleParts[1]}`;
+                } else {
+                    headerH3.innerHTML = `Ejercicio ${currentCount}: N/A`;
+                }
+                
+                element.querySelector('button').setAttribute('onclick', `removeExercise(${currentCount})`);
+            });
+            exerciseCount = currentCount; 
+        }
+    }
+}
+
+
+// --- FUNCIONES DE IMPORTACIÓN DE TEXTO ---
+
+/**
+ * Muestra u oculta el área de pegado para la matriz especificada.
+ */
+window.showPasteArea = function(matrixId) {
+    const area = document.getElementById(`paste${matrixId}-area`);
+    // Toggle (Mostrar/Ocultar)
+    area.style.display = (area.style.display === 'block') ? 'none' : 'block';
+}
+
+/**
+ * Importa los valores de una matriz desde texto plano (separado por comas, espacios o saltos de línea).
+ */
+window.importMatrixFromText = function(matrixId) {
+    const text = document.getElementById(`paste${matrixId}-text`).value.trim();
+    if (!text) {
+        alert("El área de texto está vacía.");
+        return;
+    }
+
+    const rows = text.split('\n');
+    const newMatrix = [];
+
+    // Patrón para dividir por comas O espacios, eliminando entradas vacías
+    const delimiterPattern = /[\s,]+/;
+
+    for (const rowText of rows) {
+        const cells = rowText.split(delimiterPattern).filter(val => val.trim() !== '');
+        // Convertir cada valor a número (o 0 si no es válido)
+        const row = cells.map(val => parseFloat(val) || 0);
+        
+        if (row.length > 0) {
+            newMatrix.push(row);
+        }
+    }
+
+    if (newMatrix.length === 0 || newMatrix[0].length === 0) {
+        alert("No se pudo parsear una matriz válida. Asegúrate de usar números separados por comas o espacios.");
+        return;
+    }
+    
+    // Asegurar que todas las filas tengan el mismo número de columnas
+    const newRows = newMatrix.length;
+    const newCols = newMatrix[0].length;
+    const isValid = newMatrix.every(row => row.length === newCols);
+    
+    if (!isValid) {
+        alert("Error: Todas las filas de la matriz deben tener el mismo número de columnas.");
+        return;
+    }
+
+    // 1. Actualizar las dimensiones de los inputs de setup
+    document.getElementById(`rows${matrixId}`).value = newRows;
+    document.getElementById(`cols${matrixId}`).value = newCols;
+
+    // 2. Generar la tabla con las nuevas dimensiones
+    generateMatrixInput(matrixId);
+
+    // 3. Rellenar la tabla con los valores importados
+    for (let i = 0; i < newRows; i++) {
+        for (let j = 0; j < newCols; j++) {
+            const inputId = `cell${matrixId}-${i}-${j}`;
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = newMatrix[i][j];
+            }
+        }
+    }
+    
+    // Ocultar el área de pegado y limpiar
+    document.getElementById(`paste${matrixId}-area`).style.display = 'none';
+    document.getElementById(`paste${matrixId}-text`).value = '';
+    alert(`Matriz ${matrixId} (${newRows}x${newCols}) importada con éxito.`);
+}
+
+
+// --- FUNCIONES DE IMPRESIÓN ---
+
+/**
+ * Genera el encabezado del reporte.
+ */
+function generateHeaderHTML() {
+    const materia = document.getElementById('header-materia').value || 'N/A';
+    const nombre = document.getElementById('header-nombre').value || 'N/A';
+    const carrera = document.getElementById('header-carrera').value || 'N/A';
+    const sede = document.getElementById('header-sede').value || 'N/A';
+    const jornada = document.getElementById('header-jornada').value || 'N/A';
+    const fecha = document.getElementById('header-fecha').value || new Date().toISOString().substring(0, 10);
+
+    return `
+        <div class="report-header">
+            <h1 style="text-align: center; margin-bottom: 5px;">Reporte de Cálculos de Matrices</h1>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
+                <p><strong>Materia:</strong> ${materia}</p>
+                <p><strong>Carrera:</strong> ${carrera}</p>
+                <p><strong>Realizado por:</strong> ${nombre}</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
+                <p><strong>Sede:</strong> ${sede}</p>
+                <p><strong>Jornada:</strong> ${jornada}</p>
+                <p><strong>Fecha:</strong> ${fecha}</p>
+            </div>
+            <hr style="border-top: 1px solid #ccc;">
+        </div>
+    `;
+}
+
+/**
+ * Prepara el contenido para imprimir (Encabezado + Ejercicios) y abre la ventana de impresión.
+ */
+function printReport() {
+    const printArea = document.getElementById('print-area');
+    const exercisesList = document.getElementById('exercises-list').innerHTML;
+
+    if (exercisesList.includes('placeholder')) {
+        alert('Por favor, añade al menos un ejercicio al reporte antes de imprimir.');
+        return;
+    }
+
+    // Combinar encabezado y ejercicios
+    printArea.innerHTML = generateHeaderHTML() + exercisesList;
+
+    // Abrir ventana de impresión
     window.print();
+}
+
+/**
+ * Limpia la lista de ejercicios del reporte.
+ */
+function clearReport() {
+    const list = document.getElementById('exercises-list');
+    list.innerHTML = '<p class="placeholder">Añade ejercicios para generar el reporte.</p>';
+    exerciseCount = 0;
+    alert('Reporte limpiado.');
 }
