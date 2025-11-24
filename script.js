@@ -507,7 +507,7 @@ function generateHeaderHTML() {
 
     return `
         <div class="report-header">
-            <h1 style="text-align: center; margin-bottom: 5px;">Reporte de Cálculos de Matrices</h1>
+            <h1 style="text-align: center; margin-bottom: 5px;">Cálculos de Matrices</h1>
             <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
                 <p><strong>Materia:</strong> ${materia}</p>
                 <p><strong>Carrera:</strong> ${carrera}</p>
