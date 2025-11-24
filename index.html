@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔢 Calculadora de Matrices</h1>
+        <h1>🔢 Matrices</h1>
 
         <div class="header-inputs">
             <h3>📝 Datos del Ejercicio</h3>
@@ -23,7 +23,6 @@
         <hr>
 
         <div class="input-section">
-            
             <div class="matrix-setup">
                 <h2>Matriz A</h2>
                 <button onclick="showPasteArea('A')" class="paste-button">📋 Pegar Matriz A</button>
@@ -55,12 +54,54 @@
             <div id="matrixB-container" class="matrix-table-container"></div>
         </div>
 
+        <details class="optional-matrices-container">
+            <summary>Añadir más matrices (C y D)</summary>
+            <div class="input-section">
+                <div class="matrix-setup">
+                    <h2>Matriz C</h2>
+                    <button onclick="showPasteArea('C')" class="paste-button">📋 Pegar Matriz C</button>
+                    <div id="pasteC-area" class="paste-area">
+                        <textarea id="pasteC-text" rows="3" placeholder="Ejemplo: 1,2&#10;3,4"></textarea>
+                        <button onclick="importMatrixFromText('C')" style="background-color: #27ae60;">Importar</button>
+                    </div>
+                    <label for="rowsC">Filas:</label>
+                    <input type="number" id="rowsC" value="2" min="1">
+                    <label for="colsC">Columnas:</label>
+                    <input type="number" id="colsC" value="2" min="1">
+                    <button onclick="generateMatrixInput('C')">Generar C</button>
+                </div>
+                <div id="matrixC-container" class="matrix-table-container"></div>
+                
+                <div class="matrix-setup">
+                    <h2>Matriz D</h2>
+                    <button onclick="showPasteArea('D')" class="paste-button">📋 Pegar Matriz D</button>
+                    <div id="pasteD-area" class="paste-area">
+                        <textarea id="pasteD-text" rows="3" placeholder="Ejemplo: 1,2&#10;3,4"></textarea>
+                        <button onclick="importMatrixFromText('D')" style="background-color: #27ae60;">Importar</button>
+                    </div>
+                    <label for="rowsD">Filas:</label>
+                    <input type="number" id="rowsD" value="2" min="1">
+                    <label for="colsD">Columnas:</label>
+                    <input type="number" id="colsD" value="2" min="1">
+                    <button onclick="generateMatrixInput('D')">Generar D</button>
+                </div>
+                <div id="matrixD-container" class="matrix-table-container"></div>
+            </div>
+        </details>
+
+
         <div class="operations">
             <label for="operation">Seleccionar Operación:</label>
             <select id="operation">
-                <option value="add">Suma (+)</option>
-                <option value="subtract">Resta (-)</option>
-                <option value="multiply">Multiplicación (x)</option>
+                <option value="A+B">A + B</option>
+                <option value="A-B">A - B</option>
+                <option value="AxB">A x B</option>
+                <option value="A+B+C">A + B + C</option>
+                <option value="A-B-C">A - B - C</option>
+                <option value="A+B+C+D">A + B + C + D</option>
+                <option value="A-B-C-D">A - B - C - D</option>
+                <option value="AxBxC">(A x B) x C</option>
+                <option value="AxBxCxD">((A x B) x C) x D</option>
             </select>
             <button onclick="addExerciseToReport()">Añadir a Reporte</button>
         </div>
