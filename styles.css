@@ -25,6 +25,20 @@ h1, h2, h3 {
     color: #2c3e50;
 }
 
+/* Estilos para el contenedor plegable de matrices opcionales */
+.optional-matrices-container {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px dashed #3498db;
+    border-radius: 8px;
+    background-color: #e8f4fd;
+}
+.optional-matrices-container summary {
+    font-weight: bold;
+    cursor: pointer;
+    color: #3498db;
+}
+
 /* --- Estilos de Encabezado de Reporte --- */
 .header-inputs {
     display: flex;
@@ -192,7 +206,7 @@ button {
 @media print {
     /* Ocultar elementos de la interfaz de usuario */
     .container, .print-button, .clear-button, .header-inputs, hr, .input-section, .operations, #report-container h2,
-    .exercise-report button, .paste-button, .paste-area { 
+    .exercise-report button, .paste-button, .paste-area, .optional-matrices-container { 
         display: none !important;
     }
     
