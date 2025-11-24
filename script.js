@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     generateMatrixInput('A');
     generateMatrixInput('B');
+    generateMatrixInput('C'); // Generar C al inicio
+    generateMatrixInput('D'); // Generar D al inicio
     // Establecer la fecha actual por defecto
     document.getElementById('header-fecha').value = new Date().toISOString().substring(0, 10);
 });
@@ -18,7 +20,7 @@ function getColorClass(i, j, cols) {
 }
 
 /**
- * Genera la estructura de campos de entrada (inputs) para una matriz (A o B) usando <table>.
+ * Genera la estructura de campos de entrada (inputs) para una matriz (A, B, C o D) usando <table>.
  */
 function generateMatrixInput(matrixId) {
     const rows = parseInt(document.getElementById(`rows${matrixId}`).value);
@@ -79,12 +81,12 @@ function getMatrixValues(matrixId) {
 }
 
 /**
- * Construye la tabla de matriz de entrada (A o B) con colores para la impresión.
+ * Construye la tabla de matriz de entrada (A, B, C o D) con colores para la impresión.
  */
 function createInputTableHTML(matrix, id, colsR, operation) {
     const rows = matrix.length;
     // Manejar matriz vacía
-    if (rows === 0 || matrix[0] === undefined) return '';
+    if (rows === 0 || matrix[0] === undefined) return `<p style="color:#e74c3c;">Matriz ${id} no definida o vacía.</p>`;
 
     const cols = matrix[0].length;
     let html = `<table class="matrix-table ${id}">`;
@@ -94,9 +96,8 @@ function createInputTableHTML(matrix, id, colsR, operation) {
         for (let j = 0; j < cols; j++) {
             let colorClass = '';
             
-            if (operation === 'add' || operation === 'subtract' || operation === 'multiply') {
-                colorClass = getColorClass(i, j, colsR);
-            }
+            // Usar el ancho de la matriz resultante para colorear
+            colorClass = getColorClass(i, j, colsR);
 
             const inputValue = matrix[i][j].toFixed(2).replace(/\.?0+$/, '');
             html += `<td class="${colorClass.trim()}">${inputValue}</td>`;
@@ -150,7 +151,7 @@ function createResultTableHTML(matrix, colsR) {
     return html;
 }
 
-// --- FUNCIONES DE CÁLCULO ---
+// --- FUNCIONES DE CÁLCULO BÁSICO ---
 
 function calculateElementWise(A, B, symbol) {
     const rows = A.length;
@@ -198,89 +199,179 @@ function calculateMultiplication(A, B) {
     return [C, S];
 }
 
+// --- LÓGICA DE OPERACIONES MÚLTIPLES (CADENAS) ---
 
-// --- LÓGICA DE REPORTE Y ELIMINACIÓN ---
+/**
+ * Ejecuta una operación por etapas (A+B+C, A-B-C o AxBxC).
+ */
+function executeChainOperation(operation, matrices) {
+    const operationSymbols = operation.match(/[+\-x]/g) || []; // Obtiene todos los símbolos de la operación (+, -, x)
+    let currentResult = matrices[0];
+    let allSteps = [];
+    let matricesUsed = [operation[0]]; // Para la etiqueta de las matrices
+
+    // Iterar sobre las matrices restantes (B, C, D...)
+    for (let i = 1; i < matrices.length; i++) {
+        const nextMatrix = matrices[i];
+        const nextMatrixLabel = operation[i*2]; // Etiqueta de la matriz (B, C, D)
+        const opSymbol = operationSymbols[i - 1]; // EL SÍMBOLO CORRECTO para esta etapa
+        matricesUsed.push(nextMatrixLabel);
+
+        if (currentResult.length === 0 || nextMatrix.length === 0) {
+            throw new Error(`Matriz ${matricesUsed[i-1]} o Matriz ${nextMatrixLabel} está vacía.`);
+        }
+
+        let result;
+        let steps;
+
+        if (opSymbol === '+' || opSymbol === '-') {
+            // Verificar dimensiones para suma/resta
+            if (currentResult.length !== nextMatrix.length || currentResult[0].length !== nextMatrix[0].length) {
+                throw new Error(`Dimensiones incompatibles para la operación de Suma/Resta en la etapa ${i}.`);
+            }
+            [result, steps] = calculateElementWise(currentResult, nextMatrix, opSymbol);
+            // La etiqueta de la etapa usa el símbolo correcto
+            allSteps.push({ stage: `(${matricesUsed.slice(0, i).join(operationSymbols[i-2] || operationSymbols[0])}) ${opSymbol} ${nextMatrixLabel}`, steps, result });
+        } else if (opSymbol === 'x') { // Multiplicación
+            // Verificar dimensiones para multiplicación
+            if (currentResult[0].length !== nextMatrix.length) {
+                throw new Error(`Dimensiones incompatibles para la operación de Multiplicación en la etapa ${i}. Filas de ${nextMatrixLabel} (${nextMatrix.length}) no coinciden con columnas del resultado anterior (${currentResult[0].length}).`);
+            }
+            [result, steps] = calculateMultiplication(currentResult, nextMatrix);
+            allSteps.push({ stage: `(${matricesUsed.slice(0, i).join(' x ')}) x ${nextMatrixLabel}`, steps, result });
+        }
+        
+        currentResult = result;
+    }
+    
+    // Construir la etiqueta final (Ej: A-B-C)
+    let finalLabel = operation[0];
+    for (let i = 0; i < operationSymbols.length; i++) {
+        finalLabel += operationSymbols[i] + operation[ (i+1) * 2 ];
+    }
+
+
+    return { result: currentResult, steps: allSteps, label: finalLabel };
+}
 
 /**
  * Ejecuta el cálculo y añade el ejercicio completo al reporte.
  */
 function addExerciseToReport() {
-    const A = getMatrixValues('A');
-    const B = getMatrixValues('B');
-    const operation = document.getElementById('operation').value;
+    const operationCode = document.getElementById('operation').value;
     const errorDisplay = document.getElementById('error-message');
-    
     errorDisplay.textContent = ''; 
 
-    // Verificación robusta para evitar el error 'Cannot read properties of undefined'
-    if (A.length === 0 || A[0] === undefined || B.length === 0 || B[0] === undefined) {
-        errorDisplay.textContent = 'Error: Por favor, genera las matrices A y B e introduce valores.';
-        return;
+    // Obtener las matrices requeridas según la operación
+    const matrixIds = operationCode.replace(/[^A-D]/g, '').split(''); // Ej: "A+B+C" -> ["A", "B", "C"]
+    const matrices = [];
+
+    for (const id of matrixIds) {
+        const matrix = getMatrixValues(id);
+        if (matrix.length === 0 || matrix[0] === undefined || matrix[0].length === 0) {
+            errorDisplay.textContent = `Error: La Matriz ${id} es requerida y no está definida o está vacía.`;
+            return;
+        }
+        matrices.push(matrix);
     }
-
-    const rowsA = A.length;
-    const colsA = A[0].length;
-    const rowsB = B.length;
-    const colsB = B[0].length;
-
-    const opSymbol = operation === 'add' ? '+' : (operation === 'subtract' ? '-' : 'x');
-    const opName = operation === 'add' ? 'Suma' : (operation === 'subtract' ? 'Resta' : 'Multiplicación');
-
-    let resultMatrix = null;
-    let stepByStep = null;
+    
+    let finalResult = null;
+    let stageSteps = []; // Guarda los resultados y pasos de cada sub-operación
+    let operationName = operationCode;
+    let finalLabel = operationCode;
 
     try {
-        switch (operation) {
-            case 'add':
-            case 'subtract':
-                if (rowsA !== rowsB || colsA !== colsB) {
-                    throw new Error(`La ${opName} requiere que ambas matrices tengan las mismas dimensiones (${rowsA}x${colsA} vs ${rowsB}x${colsB}).`);
+        if (matrices.length === 2) {
+            // Lógica de dos matrices (A+B, A-B, AxB)
+            const opSymbol = operationCode.includes('+') ? '+' : (operationCode.includes('-') ? '-' : 'x');
+            const opLabel = opSymbol === '+' ? 'Suma' : (opSymbol === '-' ? 'Resta' : 'Multiplicación');
+            operationName = opLabel;
+
+            const A = matrices[0];
+            const B = matrices[1];
+            
+            if (opSymbol === '+' || opSymbol === '-') {
+                 if (A.length !== B.length || A[0].length !== B[0].length) {
+                    throw new Error(`La ${opLabel} requiere matrices de la misma dimensión.`);
                 }
-                [resultMatrix, stepByStep] = calculateElementWise(A, B, opSymbol);
-                break;
-            case 'multiply':
-                if (colsA !== rowsB) {
-                    throw new Error(`La Multiplicación requiere que el número de Columnas de A sea igual al número de Filas de B (${colsA} vs ${rowsB}).`);
+                const [result, steps] = calculateElementWise(A, B, opSymbol);
+                finalResult = result;
+                stageSteps.push({ stage: operationCode, steps, result });
+            } else { // Multiplicación (AxB)
+                if (A[0].length !== B.length) {
+                    throw new Error(`La Multiplicación requiere que Columnas de A (${A[0].length}) coincida con Filas de B (${B.length}).`);
                 }
-                [resultMatrix, stepByStep] = calculateMultiplication(A, B);
-                break;
+                const [result, steps] = calculateMultiplication(A, B);
+                finalResult = result;
+                stageSteps.push({ stage: operationCode, steps, result });
+            }
+
+        } else if (matrices.length > 2) {
+            // Lógica de cadenas (A+B+C, A-B-C, AxBxC, etc.)
+            const chainResult = executeChainOperation(operationCode, matrices);
+            finalResult = chainResult.result;
+            stageSteps = chainResult.steps;
+            operationName = "Cadena de Operaciones";
+            finalLabel = chainResult.label;
         }
+
     } catch (error) {
-        errorDisplay.textContent = `Error: ${error.message}`;
+        errorDisplay.textContent = `Error en el cálculo: ${error.message}`;
         return;
     }
     
-    // Generar el HTML del ejercicio completo para el reporte
+    // --- GENERACIÓN DEL REPORTE ---
     exerciseCount++;
     const currentId = exerciseCount;
-    const colsR = resultMatrix[0].length;
-
-    const aHTML = createInputTableHTML(A, 'A', colsR, operation);
-    const bHTML = createInputTableHTML(B, 'B', colsR, operation);
     
+    // Verificación final en caso de matrices vacías después del cálculo (aunque ya se filtró)
+    if (finalResult === null || finalResult.length === 0) {
+        errorDisplay.textContent = `Error en el cálculo: La matriz resultante está vacía.`;
+        return;
+    }
+    
+    const finalRows = finalResult.length;
+    const finalCols = finalResult[0].length;
+    
+    let matricesHTML = '';
+    let stepByStepHTML = '<h4>Paso a Paso (Operaciones)</h4>';
+
+    // 1. Mostrar todas las matrices usadas
+    for (let i = 0; i < matrixIds.length; i++) {
+        matricesHTML += `
+            <div style="flex: 1; min-width: 250px;">
+                <h4>Matriz ${matrixIds[i]}</h4>
+                ${createInputTableHTML(matrices[i], matrixIds[i], finalCols, operationCode)}
+            </div>
+        `;
+    }
+
+    // 2. Mostrar los pasos por etapa
+    for (let i = 0; i < stageSteps.length; i++) {
+        const stage = stageSteps[i];
+        const resultMatrix = stage.result;
+        const resultCols = resultMatrix[0].length;
+        stepByStepHTML += `
+            <h5 style="margin-bottom: 5px;">Etapa ${i + 1}: ${stage.stage}</h5>
+            ${createStepTableHTML(stage.steps, resultMatrix, resultCols)}
+        `;
+    }
+
     const reportHTML = `
         <div class="exercise-report" id="exercise-${currentId}">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; margin-bottom: 10px;">
-                <h3 style="margin: 0;">Ejercicio ${currentId}: ${opName} (${rowsA}x${colsA} ${opSymbol} ${rowsB}x${colsB})</h3>
+                <h3 style="margin: 0;">Ejercicio ${currentId}: ${operationName} (${finalLabel} = ${finalRows}x${finalCols})</h3>
                 <button onclick="removeExercise(${currentId})" style="background-color: #e74c3c; padding: 5px 10px; font-size: 0.8em;">🗑️ Eliminar</button>
             </div>
             
             <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px;">
-                <div style="flex: 1; min-width: 250px;">
-                    <h4>Matriz A</h4>
-                    ${aHTML}
-                </div>
-                <div style="flex: 1; min-width: 250px;">
-                    <h4>Matriz B</h4>
-                    ${bHTML}
-                </div>
+                ${matricesHTML}
             </div>
 
-            <h4>Paso a Paso (Operaciones)</h4>
-            ${createStepTableHTML(stepByStep, resultMatrix, colsR)}
+            ${stepByStepHTML}
 
             <h4>Resultado Final (Matriz R)</h4>
-            ${createResultTableHTML(resultMatrix, colsR)}
+            ${createResultTableHTML(finalResult, finalCols)}
         </div>
     `;
 
